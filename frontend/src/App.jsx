@@ -38,8 +38,6 @@ function App() {
           temperature: 0.7,
         });
 
-        console.log(gptResponse.choices[0], "gptResponse");
-
         const gptResult = gptResponse.choices[0].message.content;
 
         setHistory((prevHistory) => [
