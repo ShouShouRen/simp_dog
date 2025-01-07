@@ -16,9 +16,12 @@ def preprocess_text(text):
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    # 從 POST 請求中獲取文字
     data = request.json
+    # 從請求中獲取文字
     text = data.get('text', '')
 
+    # 檢查是否有提供文字
     if not text:
         return jsonify({'error': 'No text provided!'}), 400
 
@@ -32,4 +35,4 @@ def predict():
     return jsonify({'prediction': response})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0')

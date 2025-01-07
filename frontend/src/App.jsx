@@ -1,48 +1,65 @@
 import { useState } from "react";
+import { OpenAI } from "openai";
 import axios from "axios";
 import "./index.css";
 import "./App.css";
 
 function App() {
   const [inputText, setInputText] = useState("");
-  const [result, setResult] = useState("");
-  const [userInput, setUserInput] = useState("");
-  // const [loading, setLoading] = useState(false);
-  // const [displayText, setDisplayText] = useState("");
+  const [history, setHistory] = useState([]);
 
-  // useEffect(() => {
-  //   const message = "您好有什麼地方需要幫忙的嗎？";
-  //   let index = 0;
-
-  //   const typeWriter = () => {
-  //     if (index < message.length) {
-  //       setDisplayText((prev) => prev + message.charAt(index));
-  //       index++;
-  //       setTimeout(typeWriter, 100);
-  //     }
-  //   };
-
-  //   setDisplayText(""); // Initialize displayText to an empty string
-  //   typeWriter();
-  // }, []);
+  const openai = new OpenAI({
+    apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+    dangerouslyAllowBrowser: true, // 開啟這個選項來允許在瀏覽器中使用
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // setLoading(true);
-    setUserInput(inputText);
+    const currentInput = inputText;
+
     try {
-      const response = await axios.post("http://127.0.0.1:5000/predict", {
-        text: inputText,
+      const response = await axios.post("http://35.234.3.155:5000/predict", {
+        text: currentInput,
       });
-      setResult(response.data.prediction);
-      setInputText("");
+      const currentResult = response.data.prediction;
+
+      if (currentResult === "你是純情男") {
+        setHistory((prevHistory) => [
+          ...prevHistory,
+          { input: currentInput, result: currentResult },
+        ]);
+      } else {
+        const gptResponse = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: "請以討厭的語氣回應以下所有問題。" },
+            { role: "user", content: currentInput },
+          ],
+          temperature: 0.7,
+        });
+
+        console.log(gptResponse.choices[0], "gptResponse");
+
+        const gptResult = gptResponse.choices[0].message.content;
+
+        setHistory((prevHistory) => [
+          ...prevHistory,
+          {
+            input: currentInput,
+            result: `${currentResult} (GPT 回應: ${gptResult})`,
+          },
+        ]);
+      }
     } catch (error) {
       console.error("Error fetching prediction:", error);
-      setResult("發生錯誤");
+
+      // 錯誤結果到歷史記錄
+      setHistory((prevHistory) => [
+        ...prevHistory,
+        { input: currentInput, result: "發生錯誤" },
+      ]);
     } finally {
-      setTimeout(() => {
-        // setLoading(false);
-      }, 1000);
+      setInputText("");
     }
   };
 
@@ -52,14 +69,17 @@ function App() {
         舔狗分類器
       </h1>
       <div className="flex flex-col justify-between h-[70vh] border-8 border-[#ECECEC] rounded-lg p-4">
-        <div className="flex-grow">
-          <div className="mt-4">
-            <p className="text-right">您: {userInput}</p>
-            <p>結果: {result}</p>
-          </div>
-          <div className="mt-4">
-            {/* <p>{displayText}</p> */}
-          </div>
+        <div className="flex-grow overflow-auto h-[50vh]">
+          {history.map((item, index) => (
+            <div key={index} className="mt-4">
+              <p className="ms-auto bg-[#444654] w-fit p-4 rounded-3xl my-4">
+                您: {item.input}
+              </p>
+              <p className="me-auto bg-[#444654] w-fit p-4 rounded-3xl my-4">
+                結果: {item.result}
+              </p>
+            </div>
+          ))}
         </div>
         <form
           onSubmit={handleSubmit}
