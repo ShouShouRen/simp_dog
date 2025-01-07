@@ -33,6 +33,7 @@ function App() {
           model: "gpt-3.5-turbo",
           messages: [
             { role: "system", content: "請以討厭的語氣回應以下所有問題。" },
+            { role: "system", content: "請限制回應在40個字以內。" },
             { role: "user", content: currentInput },
           ],
           temperature: 0.7,
